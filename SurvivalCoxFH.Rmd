@@ -23,25 +23,24 @@ Ahmad Firdaus bin Mohamed
 
 ## Dataset
 
-The dataset represent data from the Framingham Heart Study, Levy(1999) National Heart Lung and Blood Institute, Center for Bio-medical Communication.The dataset consist of measurements of 9 variables on 4699 patients who were free of coronary heart disease at their baseline exam. 
+The dataset represent data from the Framingham Heart Study, Levy(1999) National Heart Lung and Blood Institute, Center for Bio-medical Communication.The dataset consist of measurements of 9 variables on 4699 patients who were free of coronary heart disease at their baseline exam.
 
 The variables are:
 
-1. id - patient identifier 
-2. Sex - Patient gender (categorical; 1 = male, 2 = female)
-3. SBP - Systolic blood pressure, mmHg (numerical)
-4. DBP - Diastolic Blood Pressure, mmHg (numerical)
-5. SCL - Serum Cholesterol, mg/dL (numerical)
-6. Age - Age at baseline exam (years) (numerical)
-7. BMI - Body Mass Index (kg/m2) (numerical)
-8. Month - Month of year at baseline exam (numerical)
-9. Follow-up - Subject's follow-up, days since baseline (numerical)
+1.  id - patient identifier
+2.  Sex - Patient gender (categorical; 1 = male, 2 = female)
+3.  SBP - Systolic blood pressure, mmHg (numerical)
+4.  DBP - Diastolic Blood Pressure, mmHg (numerical)
+5.  SCL - Serum Cholesterol, mg/dL (numerical)
+6.  Age - Age at baseline exam (years) (numerical)
+7.  BMI - Body Mass Index (kg/m2) (numerical)
+8.  Month - Month of year at baseline exam (numerical)
+9.  Follow-up - Subject's follow-up, days since baseline (numerical)
 10. CHDfate - Event of CHD at end of follow-up (categorical ; 1 = chd, 0 = no chd)
 
 # Method
 
 The objective of the Framingham Heart Study was to identify the common factors or characteristics that contribute to risk of developing CVD by following its development over a long period of time in a large group of participants who had not yet developed overt symptoms of CVD or suffered a heart attack or stroke by cox proportional hazard regression. We can also analyze the time to event analysis (event of interest is event of developed CHD at end of follow-up)
-
 
 ### Prepare environment / Load libraries
 
@@ -56,7 +55,7 @@ library(survival)
 library(corrplot)
 ```
 
-### Read Data 
+### Read Data
 
 ```{r}
 Data1 <- read_sav("FraminghamLabel.sav")
@@ -84,19 +83,15 @@ daystime
 Data3 <- na.omit(Data2)
 ```
 
-
 ### Describe data
 
 Describe data for numerical variables, and categorical varibles.
 
-Event: CHD fate
-time: daystime
-
+Event: CHD fate time: daystime
 
 CV:
 
-Numerical variables: SBP, DBP, SCL, Age, BMI
-Categorical variables:
+Numerical variables: SBP, DBP, SCL, Age, BMI Categorical variables:
 
 ```{r}
 Data3 %>% group_by(chdfate) %>%
@@ -118,38 +113,38 @@ Data3 %>%
 str(Data3)
 ```
 
-## Kaplan-Meir Survival Estimates 
+## Kaplan-Meir Survival Estimates
 
-### KM Estimates for overall 
+### KM Estimates for overall
 
-Estimate the survival probabilities for all subjects (constant ~ 1)
+Estimate the survival probabilities for all subjects (constant \~ 1)
 
 ```{r}
 KM1 <- survfit(Surv(time = followup, event = chdfate == 'CHD') ~ 1, type = "kaplan-meier", data = Data3)
 summary(KM1)
-head(KM1, 10)
 ```
+
 Manual calculations of survival probabilities:
 
- 371   4621       1    0.992 0.001283        0.990        0.995
- 374   4620       1    0.992 0.001301        0.990        0.995
+371 4621 1 0.992 0.001283 0.990 0.995 374 4620 1 0.992 0.001301 0.990 0.995
 
 At 374 days, the survival probabilities is:
 
 ```{r}
 1-1/4620
 ```
+
 ```{r}
 0.9997835*0.992
 ```
+
 #### Survival Plot for overall
 
 ```{r}
 ggsurvplot(KM1, data = Data3, risk.table = TRUE, linetype = c(1,2), pval = TRUE)
 ```
 
-
-### KM Estimates for groups
+#### KM Estimates for groups
 
 Estimate the survival probabilities by groups (categorical variables)
 
@@ -166,20 +161,507 @@ ggsurvplot(KM.sex, data = Data3, linetype = c(1,2), pval = TRUE)
 
 There is difference in survival between male and female groups
 
-### Estimate Survival function
+#### Estimate Survival function
 
 Estimate the survival function at any percentile.
 
 Example, what is the value for survival duration (days) at 25, 50 & 75 percentile?
 
 ```{r}
+quantile_points <- c(0.25, 0.50, 0.75)
+survival_times <- quantile(KM1$time, quantile_points)
+summary(survival_times)
+```
+
+```{r}
 quantile(KM1, probs = c(0.25, 0.50, 0.75))
 ```
 
+```{r}
+quantile(KM.sex, probs = c(0.25,0.50, 0.75))
+```
 
-### Estimate survival probability
+#### Estimate survival probability
+
+What is the minimum duration and max. duration of followup time according to chdfate (chd vs no chd)
+
+```{r}
+Data3 %>% group_by(chdfate) %>%
+  summarize(min.dur = min(followup), max.dur = max(followup))
+```
+
+Lets estimate survival probability at 10, 1000, 10000 days
+
+```{r}
+summary(KM1, times = c(10, 1000, 10000))
+```
+
+2nd example, lets ectimate the survival probabilities at 5 years (1825days), 10 years(3650days), and 15 years(5475)
+
+```{r}
+summary(KM1, times = c(1825, 3650, 5475))
+```
+
+3rd example, by using KM.sex to estimate survival probabilities for femala at 5 years (1825days), 10 years(3650days), and 15 years(5475day. s)
+
+```{r}
+summary(KM.sex, times = c(1825, 3650, 5475))
+```
+
+
+### Compare survival estimates between categorical variable
+
+We need to compare the survival estimates of gender group(female vs males) y performing logrank test, peto test, weilbull test etc.
+
+#### logrank test
+
+```{r}
+logrank.sex <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ sex, data = Data3, rho = 0)
+logrank.sex
+```
+
+
+#### Peto test
+
+```{r}
+peto.sex <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ sex, data = Data3, rho = 1)
+peto.sex
+```
+
+From both logrank test and peto test, the P value is <0.001, hence there is statistically significant different of survival estimates between female and male group.
+
+
+
+### Compare survival estimates between numerical groups 
+
+Numerical variable:
+Age, BMI, SCL, SBP, DBP
+
+#### Age
+
+```{r}
+summary(Data3$age)
+```
+Categorize age into groups:
+
+0, 30, 45, 70 
+
+```{r}
+Data3 <- Data3 %>% 
+  mutate(age.c = cut(age, c(0, 30, 45, 70), labels = c('min-30', '31-45', 'above 45')))
+Data3 %>% count(age.c)
+```
+
+```{r}
+KM.age <- survfit(Surv(time = followup, chdfate == 'CHD') ~ age.c, data = Data3, type = "kaplan-meier")
+summary(KM.age)
+```
+
+```{r}
+ggsurvplot(KM.age, data = Data3, linetype = c(1, 2, 3), risk.table = TRUE, pval = TRUE)
+```
 
 
 
 
-asasf
+```{r}
+logrank.age.c <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ age.c, data = Data3, rho = 0)
+logrank.age.c
+```
+```{r}
+peto.age.c <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ age.c, data = Data3, rho = 1)
+peto.age.c
+```
+#### BMI
+
+```{r}
+summary(Data3$bmi)
+```
+Categorize into:
+
+0, 15, 25, 40, 60
+
+```{r}
+Data3 <- Data3 %>% mutate(bmi.c = cut(bmi, c(0, 15, 25, 40, 60), labels = c('min-15', '16-25', '26-40','above 40')))
+Data3 %>% count(bmi.c)
+```
+
+```{r}
+KM.bmi <- survfit(Surv(time = followup, event = chdfate == 'CHD') ~ bmi.c, type = "kaplan-meier", data = Data3)
+summary(KM.bmi)
+```
+
+```{r}
+ggsurvplot(KM.bmi, data = Data3, risk.table = TRUE, linetype = c(1,2,3), pval = TRUE)
+```
+
+
+
+```{r}
+logrank.bmi <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ bmi.c, data = Data3, rho = 0)
+logrank.bmi
+```
+```{r}
+peto.bmi <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ bmi.c, data = Data3, rho = 1)
+peto.bmi
+```
+
+
+
+
+#### SBP
+
+```{r}
+summary(Data3$sbp)
+```
+
+Categorize into:
+
+0, 110, 130, 300
+
+```{r}
+Data3 <- Data3 %>% mutate(sbp.c = cut(sbp, c(0, 110, 130, 300), labels = c('min-110', '111-130','above 130')))
+Data3 %>% count(sbp.c)
+```
+
+```{r}
+KM.sbp <- survfit(Surv(time = followup, event = chdfate == 'CHD') ~ sbp.c, type = "kaplan-meier", data = Data3)
+summary(KM.sbp)
+```
+
+
+```{r}
+ggsurvplot(KM.sbp, data = Data3, risk.table = TRUE, linetype = c(1,2,3), pval = TRUE)
+```
+
+
+
+
+
+```{r}
+logrank.sbp <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ sbp.c, data = Data3, rho = 0)
+logrank.sbp
+```
+
+
+```{r}
+peto.sbp <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ sbp.c, data = Data3, rho = 1)
+peto.sbp
+```
+
+
+
+
+#### DBP
+
+```{r}
+summary(Data3$dbp)
+```
+categorize into:
+
+0, 70, 90, 150
+
+```{r}
+Data3<- Data3 %>%
+  mutate(dbp.c = cut(dbp, c(0, 70, 90, 150), labels = c('min-70', '71-90', ' above 90')))
+Data3 %>% count(dbp.c)
+```
+
+```{r}
+KM.dbp <- survfit(Surv(time = followup, event = chdfate == 'CHD') ~ dbp.c, type = "kaplan-meier", data = Data3)
+summary(KM.dbp)
+```
+
+```{r}
+ggsurvplot(KM.dbp, data = Data3, risk.table = TRUE, linetype = c(1,2,3), pval = TRUE)
+```
+
+
+
+
+
+```{r}
+logrank.dbp <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ dbp.c, data = Data3, rho = 0)
+logrank.dbp
+```
+
+```{r}
+peto.dbp <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ dbp.c, data = Data3, rho = 1)
+peto.dbp
+```
+
+
+
+
+
+#### SCL
+
+```{r}
+summary(Data3$scl)
+```
+
+Categorize into:
+
+0, 200, 255, 600
+
+
+```{r}
+Data3<- Data3 %>%
+  mutate(scl.c = cut(scl, c(0, 200, 255, 600), labels = c('min-200', '201-255', ' above 255')))
+Data3 %>% count(scl.c)
+```
+
+```{r}
+KM.scl <- survfit(Surv(time = followup, event = chdfate == 'CHD') ~ scl.c, type = "kaplan-meier", data = Data3)
+summary(KM.scl)
+```
+
+```{r}
+ggsurvplot(KM.scl, data = Data3, risk.table = TRUE, linetype = c(1,2,3), pval = TRUE)
+```
+
+
+
+
+```{r}
+logrank.scl <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ dbp.c, data = Data3, rho = 0)
+logrank.scl
+```
+
+```{r}
+peto.scl <- survdiff(Surv(time = followup, event = chdfate == 'CHD') ~ scl.c, data = Data3, rho = 1)
+logrank.scl
+```
+
+
+# COX PROPORTIONAL HAZARD REGRESSION (SIMPLE/UNIVARIATE)
+
+
+Estimate the COX PH regression using Elfron method or Breslow method. 
+
+Outcome variable:
+
+Time : followup
+Event: chdfate
+
+Covariates:
+Numerical: age, sbp, dbp, scl, bmi 
+Categorical : gender 
+
+## Univariable COX PH regression 
+
+
+### Numerical variable 
+
+#### Age
+
+##### Elfron method
+
+```{r}
+cox.age <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ age, data = Data3)
+summary(cox.age)
+```
+
+
+
+
+
+##### Breslow method 
+
+```{r}
+cox.age.breslow <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ age, data = Data3, method = "breslow")
+summary(cox.age.breslow)
+```
+
+
+
+#### SBP
+
+
+```{r}
+cox.sbp <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ sbp, data = Data3)
+summary(cox.sbp)
+```
+
+```{r}
+cox.sbp.breslow <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ sbp, data = Data3, method = "breslow")
+summary(cox.sbp.breslow)
+```
+
+
+
+#### DBP
+
+
+```{r}
+cox.dbp <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ dbp, data = Data3)
+summary(cox.dbp)
+```
+
+```{r}
+cox.dbp.breslow <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ dbp, data = Data3, method = "breslow")
+summary(cox.dbp.breslow)
+```
+
+
+
+#### SCL
+
+```{r}
+cox.scl <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ scl, data = Data3)
+summary(cox.scl)
+```
+
+
+```{r}
+cox.scl.breslow <-coxph(Surv(time = followup, event = chdfate == 'CHD') ~ scl, data = Data3, method = "breslow")
+summary(cox.scl.breslow)
+```
+
+
+
+#### BMI
+
+```{r}
+cox.bmi <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ bmi, data = Data3)
+summary(cox.bmi)
+```
+
+
+### Categorical variable 
+
+#### Gender 
+
+```{r}
+cox.sex <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ sex, data = Data3)
+summary(cox.sex)
+```
+
+#### age.c, sbp.c, bmi.c
+
+```{r}
+cox.age.c <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ age.c, data = Data3)
+cox.sbp.c <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ sbp.c, data = Data3)
+cox.bmi.c <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ bmi.c, data = Data3)
+```
+
+
+```{r}
+summary(cox.age.c)
+summary(cox.sbp.c)
+summary(cox.bmi.c)
+```
+ 
+
+### ALL VARIABLE (Table summary)****
+
+
+```{r}
+Data3 %>% 
+  dplyr::select(-age.c) %>%
+  tbl_uvregression(method = coxph,
+  y = Surv(time = followup, event = chdfate == 'CHD'),
+  exponentiate = TRUE,
+  pvalue_fun = ~style_pvalue(.x, digits = 3)
+  ) %>% bold_labels() %>% italicize_levels() %>%
+  as_gt()
+```
+
+
+
+## Multivariable Cox PH Regression 
+
+
+### Main effect model
+
+Outcome variable:
+
+Time : followup
+Event: chdfate
+
+Covariates:
+Numerical: age, sbp, dbp, scl, bmi 
+Categorical : gender 
+
+```{r}
+mv.cox <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ age + sbp + dbp + scl + bmi + sex, data = Data3)
+summary(mv.cox)
+tidy(mv.cox)     # log hazard
+tidy(mv.cox, exponentiate = TRUE)      #hazard ratio
+```
+
+
+
+### Model with interaction
+
+? Numerical vs Numerical (age vs bmi), as age increases, bmi may also increase //scl vs bmi
+? Numerical vs Categorical (gender vs scl), as women has more cholesterol levels comapred to men // 
+ 
+ 
+
+#### Age vs BMI 
+
+
+```{r}
+mv.cox.age.bmi.ia <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ age + sbp + dbp + scl + bmi + sex + age:bmi, data = Data3)
+summary(mv.cox.age.bmi.ia)
+tidy(mv.cox.age.bmi.ia)    # Log Hazards
+tidy(mv.cox.age.bmi.ia, exponentiate = TRUE)    # Hazard ratio
+```
+
+
+#### Gender vs SCL
+
+
+```{r}
+mv.cox.sex.scl.ia <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ age + sbp + dbp + scl + bmi + sex + sex:scl, data = Data3)
+summary(mv.cox.sex.scl.ia)
+tidy(mv.cox.sex.scl.ia)
+tidy(mv.cox.sex.scl.ia, exponentiate = TRUE)
+```
+
+#### SCL vs BMI 
+
+
+```{r}
+mv.cox.scl.bmi.ia <- coxph(Surv(time = followup, event = chdfate == 'CHD') ~ age + sbp + dbp + scl + bmi + sex + scl:bmi, data = Data3)
+summary(mv.cox.scl.bmi.ia)
+tidy(mv.cox.scl.bmi.ia)
+tidy(mv.cox.scl.bmi.ia, exponentiate = TRUE)
+```
+No interaction noted in model with interactions
+
+
+### Model comparison
+
+Compare main effect model with 2 model with interaction previously 
+
+```{r}
+anova(mv.cox, mv.cox.age.bmi.ia, test = 'Chisq')
+```
+There are no interaction between age and bmi, P value > 0.05, not significant as well
+
+```{r}
+anova(mv.cox, mv.cox.scl.bmi.ia, test = 'Chisq')
+```
+There are no interaction between serum cholesterol and bmi, P value > 0.05, not significant as well
+
+```{r}
+anova(mv.cox, mv.cox.sex.scl.ia, test = 'Chisq')
+```
+
+There are no interaction between serum cholesterol and gender, P value > 0.05, not significant as well
+
+
+
+
+
+
+
+
+
+
+
+
+
+
