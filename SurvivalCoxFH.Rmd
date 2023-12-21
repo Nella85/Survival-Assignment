@@ -40,5 +40,28 @@ The variables are:
 
 # Method
 
-The objective of the Framingham Heart Study was to identify the common factors or characteristics that contribute to risk of developing CVD by following its development over a long period of time in a large group of participants who had not yet developed overt symptoms of CVD or suffered a heart attack or stroke.
+The objective of the Framingham Heart Study was to identify the common factors or characteristics that contribute to risk of developing CVD by following its development over a long period of time in a large group of participants who had not yet developed overt symptoms of CVD or suffered a heart attack or stroke by cox proportional hazard regression. We can also analyze the time to event analysis (event of interest is event of developed CHD at end of follow-up)
+
+
+### Prepare environment / Load libraries
+
+```{r}
+library(haven)
+library(tidyverse)
+library(gtsummary)
+library(broom)
+library(knitr)
+library(tidyr)
+library(survival)
+```
+
+
+
+
+
+
+
+
+
+
 
