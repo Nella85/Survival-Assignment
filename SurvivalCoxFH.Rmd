@@ -23,9 +23,22 @@ Ahmad Firdaus bin Mohamed
 
 ## Dataset
 
-The dataset represent data from the Framingham Heart Study, Levy(1999) National Heart Lung and Blood Institute, Center for Bio-medical Communication
+The dataset represent data from the Framingham Heart Study, Levy(1999) National Heart Lung and Blood Institute, Center for Bio-medical Communication.The dataset consist of measurements of 9 variables on 4699 patients who were free of coronary heart disease at their baseline exam. 
 
+The variables are:
+
+1. id - patient identifier 
+2. Sex - Patient gender (categorical; 1 = male, 2 = female)
+3. SBP - Systolic blood pressure, mmHg (numerical)
+4. DBP - Diastolic Blood Pressure, mmHg (numerical)
+5. SCL - Serum Cholesterol, mg/dL (numerical)
+6. Age - Age at baseline exam (years) (numerical)
+7. BMI - Body Mass Index (kg/m2) (numerical)
+8. Month - Month of year at baseline exam (numerical)
+9. Follow-up - Subject's follow-up, days since baseline (numerical)
+10. CHDfate - Event of CHD at end of follow-up (categorical ; 1 = chd, 0 = no chd)
 
 # Method
 
-World Health Organization has estimated 12 million deaths occur worldwide, every year due to Heart diseases. Half the deaths in the United States and other developed countries are due to cardio vascular diseases. The early prognosis of cardiovascular diseases can aid in making decisions on lifestyle changes in high risk patients and in turn reduce the complications. This research intends to pinpoint the most relevant/risk factors of heart disease as well as predict the overall risk using logistic regressive
+The objective of the Framingham Heart Study was to identify the common factors or characteristics that contribute to risk of developing CVD by following its development over a long period of time in a large group of participants who had not yet developed overt symptoms of CVD or suffered a heart attack or stroke.
+
