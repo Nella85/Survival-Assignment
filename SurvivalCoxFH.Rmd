@@ -53,15 +53,133 @@ library(broom)
 library(knitr)
 library(tidyr)
 library(survival)
+library(corrplot)
 ```
 
-ADASFASF
+### Read Data 
+
+```{r}
+Data1 <- read_sav("FraminghamLabel.sav")
+summary(Data1)
+glimpse(Data1)
+```
+
+### Transform data
+
+```{r}
+Data2 <-
+  Data1 %>% mutate(across(where(is.labelled), as_factor)) %>%
+    mutate(scl = as.integer(scl), bmi = as.integer(bmi))
+summary(Data2)
+glimpse(Data2)
+```
+
+```{r}
+daystime <- Data2$followup
+daystime
+```
+
+```{r}
+# Omit rows with missing values
+Data3 <- na.omit(Data2)
+```
+
+
+### Describe data
+
+Describe data for numerical variables, and categorical varibles.
+
+Event: CHD fate
+time: daystime
+
+
+CV:
+
+Numerical variables: SBP, DBP, SCL, Age, BMI
+Categorical variables:
+
+```{r}
+Data3 %>% group_by(chdfate) %>%
+    summarise(mean.sbp = mean(sbp), sd.age = sd(sbp), 
+              mean.dbp = mean(dbp), sd.sbp = sd(dbp),
+              mean.scl = mean(scl), sd.scl = sd(scl),
+              mean.age = mean(age), sd.age = sd(age),
+              mean.bmi = mean(bmi), sd.bmi = sd(bmi))
+```
+
+### All variables (IMPORTANT TO REMEMEBER!!!)
+
+```{r}
+Data3 %>% 
+  tbl_summary(by = chdfate, statistic = list(all_continuous() ~ "{mean}, ({sd})", all_categorical() ~ "{n} /{N} ({p}%)"))
+```
+
+```{r}
+str(Data3)
+```
+
+## Kaplan-Meir Survival Estimates 
+
+### KM Estimates for overall 
+
+Estimate the survival probabilities for all subjects (constant ~ 1)
+
+```{r}
+KM1 <- survfit(Surv(time = followup, event = chdfate == 'CHD') ~ 1, type = "kaplan-meier", data = Data3)
+summary(KM1)
+head(KM1, 10)
+```
+Manual calculations of survival probabilities:
+
+ 371   4621       1    0.992 0.001283        0.990        0.995
+ 374   4620       1    0.992 0.001301        0.990        0.995
+
+At 374 days, the survival probabilities is:
+
+```{r}
+1-1/4620
+```
+```{r}
+0.9997835*0.992
+```
+#### Survival Plot for overall
+
+```{r}
+ggsurvplot(KM1, data = Data3, risk.table = TRUE, linetype = c(1,2), pval = TRUE)
+```
+
+
+### KM Estimates for groups
+
+Estimate the survival probabilities by groups (categorical variables)
+
+By Gender only in this dataset (Male and Female)
+
+```{r}
+KM.sex <- survfit(Surv(time = followup, event = chdfate == 'CHD') ~ sex, type = "kaplan-meier", data = Data3)
+summary(KM.sex)
+```
+
+```{r}
+ggsurvplot(KM.sex, data = Data3, linetype = c(1,2), pval = TRUE)
+```
+
+There is difference in survival between male and female groups
+
+### Estimate Survival function
+
+Estimate the survival function at any percentile.
+
+Example, what is the value for survival duration (days) at 25, 50 & 75 percentile?
+
+```{r}
+quantile(KM1, probs = c(0.25, 0.50, 0.75))
+```
 
 
 
 
-
-
+### Estimate survival probability
 
 
 
