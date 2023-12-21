@@ -5,3 +5,27 @@ date: "2023-12-21"
 output: html_document
 ---
 
+# Introduction
+
+## Group Members
+
+Nionella binti Stephen Sampil
+
+Wan Nor Syafiqah binti Wan Salleh
+
+Nur Hafizah binti Sukeri
+
+Farah Munirah binti Mior Mazlan
+
+Zahid bin Zulkifli
+
+Ahmad Firdaus bin Mohamed
+
+## Dataset
+
+The dataset represent data from the Framingham Heart Study, Levy(1999) National Heart Lung and Blood Institute, Center for Bio-medical Communication
+
+
+# Method
+
+World Health Organization has estimated 12 million deaths occur worldwide, every year due to Heart diseases. Half the deaths in the United States and other developed countries are due to cardio vascular diseases. The early prognosis of cardiovascular diseases can aid in making decisions on lifestyle changes in high risk patients and in turn reduce the complications. This research intends to pinpoint the most relevant/risk factors of heart disease as well as predict the overall risk using logistic regressive
