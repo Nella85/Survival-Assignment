@@ -659,7 +659,7 @@ Compare main effect model with 2 model with interaction previously
 ```{r}
 anova(mv.cox, mv.cox.age.bmi.ia, test = 'Chisq')
 ```
-However, using likelihood ratio test (anova) --> There is statistically significant interaction between age and bmi, P value =  0.04983
+There are no interaction between age and bmi, P value = 0.05, not significant as well
 
 ```{r}
 anova(mv.cox, mv.cox.scl.bmi.ia, test = 'Chisq')
@@ -672,10 +672,10 @@ anova(mv.cox, mv.cox.sex.scl.ia, test = 'Chisq')
 
 There are no interaction between serum cholesterol and gender, P value > 0.05, not significant as well
 
-Hence our preliminary final model is mv.cox.age.bmi.ia.
+Hence our preliminary final model is mv.cox
 
 ```{r}
-prelim.final <- mv.cox.age.bmi.ia
+prelim.final <- mv.cox
 ```
 
 
@@ -815,6 +815,22 @@ augment(mv.cox, data = Data2)
 ```
 According to the residuals plots (martingale and dfbeta plots) ---> there minimal outliers noted. We concluded that the outliers do not have significant influential effect to our model, hence the outliers were not removed. 
 
+### Influential plots
+
+```{r}
+ggcoxdiagnostics(mv.cox, type = 'deviance', linear.predictions = FALSE)
+```
+```{r}
+ggcoxdiagnostics(mv.cox, type = 'martingale', linear.predictions = FALSE)
+```
+```{r}
+ggcoxdiagnostics(mv.cox.age.bmi.ia, type = 'deviance', linear.predictions = FALSE)
+```
+
+```{r}
+ggcoxdiagnostics(mv.cox.age.bmi.ia, type = 'martingale', linear.predictions = FALSE)
+```
+According to the plots above ---> there minimal outliers noted. We concluded that the outliers do not have significant influential effect to our model, hence the outliers were not removed. 
 
 
 ## Prediction 
@@ -853,6 +869,12 @@ new_data <- expand.grid(age = c(40,55,70),
 new_data
 ```
 
+
+
+
+
+
+
 #### Linear Predictor for the newdata created
 
 ##### Produce Means for all predictors/ variables 
@@ -872,7 +894,7 @@ summary(Data2$sex)
 ```
 
 ```{r}
-2040/4658
+2618/4658
 ```
 
 ###### mean for age
@@ -901,14 +923,6 @@ mean(Data2$scl)
 ```{r}
 mean(Data2$bmi)
 ```
-###### Age vs bmi interaction (numerical vs numerical)
-
-```{r}
-coef_values <- coef(mv.cox.age.bmi.ia)
-coef_age_bmi <- coef_values["age:bmi"]
-mean_age_bmi <- exp(coef_age_bmi)
-mean_age_bmi
-```
 
 
 
@@ -936,26 +950,157 @@ Age: 40              mean age 46.03199
 sbp: 90              mean sbp  132.7737
 scl: 120             mean scl  228.2913
 bmi: 18              mean bmi 25.62797
-sex: 1              mean sex 0.5620438
+sex: 1             mean sex 0.5620438
+
 
 ```{r}
 mv.cox$coefficients[1]*(40 - 46.03199) +
   mv.cox$coefficients[2]*(90 - 132.7737) +
   mv.cox$coefficients[3]*(120 - 228.2913) +
   mv.cox$coefficients[4]*(18 - 25.62797) +
-  mv.cox$coefficients[5]*(1 -0.5620438)
+  mv.cox$coefficients[5]*(1 - 0.5620438)
 ```
 For 2nd observation?
 
 
+** .fitted values are the estimated log hazard ratio for each individual
 
-##### Model with interaction 
+Example: For 1st observation who are 40 years old, has 90 Sbp, scl of 120, bmi 18 & being male , the log hazard ratio is -1.63
+
+```{r}
+exp(-1.6310371)
+```
+
+Manual calculations:
+
+How do you get the linear predictor for the first observation? 
+
+Age: 40              mean age 46.03199
+sbp: 90              mean sbp  132.7737
+scl: 120             mean scl  228.2913
+bmi: 18              mean bmi 25.62797
+sex: 1             mean sex 0.5620438
+age:bmi             mean (age:bmi) 0.9985837 
 
 
 
 
+#### Risk Score 
+
+Calculates the relative risk (hazard ratio) of the created population against the population sample 
 
 
+##### Main effect model
+```{r}
+risk.mv.cox <- predict(mv.cox, newdata = new_data, type = 'risk')
+head(risk.mv.cox)
+```
+1st observation : cumulative HR of developing CHD is 0.1957265
+
+```{r}
+exp(-1.6310371)
+```
+
+The cumulative hazard risk for the 1st observation is 0.1957265
+
+
+#### Expected number of event 
+
+Estimate the expected number of event = chdfate (developing CHD) at specific point of time 
+
+Example: 
+
+How many individuals developed CHD at 5 years (1825days), 10 years (3650days), 15 years (5475days)?
+
+```{r}
+new_data2 <- expand.grid(chdfate = 'CHD', followup = c(1825, 3650, 5475))
+new_data2
+```
+```{r}
+new_data3 <- data.frame(new_data, new_data2)
+new_data3
+summary(new_data3)
+```
+
+Next we estimate the predicted number of events for these 162 individuals.
+
+##### For main effect model 
+
+
+```{r}
+pred.exp <- predict(mv.cox, newdata = new_data3, type = 'expected')
+pred.exp2 <- round(pred.exp, digits = 3)
+cbind(new_data3, pred.exp2)
+
+```
+
+For the 125th observation, who are 55 years old female with initial follow up time of 10 years (3650 days) and the specific values for other covariates has predicted expected number of occurences CHD is 0.629.
+
+
+27   70 300 600  18   Male     CHD     5475    24.936
+
+for 27th observation, a 70 year old male, with initial follow up time of 15 years(5475 days) with its specific values of covariates has predicted expected number of CHD occurences is 24.936 (2493.6%).
+
+
+
+#### Estimate survival probability using new data frame(new_data3) 
+
+1. baseline hazard function
+2. linear predictor (log hazard)
+
+```{r}
+lp.pred <- predict(mv.cox, newdata = new_data3, type = 'lp')
+lp.pred     #log hazard
+```
+
+
+Estimate baseline hazard
+
+```{r}
+base <- basehaz(mv.cox)
+base
+```
+
+140 0.0245772434 1096
+
+What are the predicted hazard at 1096 days?
+
+```{r}
+pred.hazard <- 0.02457*exp(lp.pred)
+pred.hazard
+```
+
+## Interpretation
+
+Our final model is chosen is model with interaction (mv.cox.age.bmi.ia)
+
+```{r}
+Final.model <- prelim.final
+summary(Final.model)
+```
+```{r}
+tbl_regression(Final.model, exponentiate = TRUE, pvalue_fun = ~ style_pvalue(.x,    digits = 3)) %>%
+     add_nevent(location = 'level') %>%
+    bold_labels() %>% italicize_levels() %>%
+    as_gt() %>% 
+    gt::tab_header(title = "Table 3. Multiple Cox Proportional Hazard Regression (Final Model)")
+```
+
+
+#### Model equation:
+
+Occurences of CHD (event) according to time = ho(t) * exp(1.08*age) + (1.01*sbp) + (1.01*scl) + (1.11*bmi) + (0.46*gender)
+
+
+### Interpretation
+
+1. Every 1 year increase in age, the hazard ratio of occuring CHD is 1.08.
+2. Every 1 mmHg increase of systolic blood pressure, the hazard ratio of occuring CHD is 1.01 when age, serum cholesterol, BMI and gender adjusted.
+3. Every 1 mg/dL increase of serum cholesterol, thee hazard ratio of CHD occuring is 1.01 when adjusted to age, systolic blood pressure, BMI and gender.
+
+4. Every 1 unit increase of BMI, the hazard ratio of CHD occuring is 1.04 when adjusted to age, systolic blood pressure, serum cholesterol, and gender
+
+5. Women has 55% hazard reduction of occuring CHD, compared to men when adjusted to age, systolic blood pressure, serum cholesterol, and BMI
 
 
 
