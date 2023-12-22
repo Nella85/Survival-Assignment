@@ -871,9 +871,8 @@ bmi
 summary(Data2$sex)
 ```
 
-
 ```{r}
-2618/4658
+2040/4658
 ```
 
 ###### mean for age
@@ -937,14 +936,14 @@ Age: 40              mean age 46.03199
 sbp: 90              mean sbp  132.7737
 scl: 120             mean scl  228.2913
 bmi: 18              mean bmi 25.62797
-sex: 0               mean sex 0.5620438
+sex: 1              mean sex 0.5620438
 
 ```{r}
 mv.cox$coefficients[1]*(40 - 46.03199) +
   mv.cox$coefficients[2]*(90 - 132.7737) +
   mv.cox$coefficients[3]*(120 - 228.2913) +
   mv.cox$coefficients[4]*(18 - 25.62797) +
-  mv.cox$coefficients[5]*(-1.63)
+  mv.cox$coefficients[5]*(1 -0.5620438)
 ```
 For 2nd observation?
 
